@@ -18,8 +18,8 @@
         <li>存疑信息默认折叠提示，只标注、不删除</li>
       </ul>
       <h3>技术栈</h3>
-      <p>前端：Vue 3 + Vite + Vue Router + Pinia</p>
-      <p>后端：FastAPI (Python)</p>
+      <p>前端：Vue 3 + Vite + Vue Router + Pinia（数据内置，可脱离后端独立运行）</p>
+      <p>后端：FastAPI (Python)，作为可选全栈演示</p>
     </div>
   </div>
 </template>

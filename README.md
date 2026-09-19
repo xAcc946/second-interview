@@ -2,6 +2,17 @@
 
 面向珠海科技学院在校学生的校园活动与机会信息聚合平台，帮助同学们更高效地发现、理解和参与各类校园活动。
 
+> ✅ **在线体验（GitHub Pages）**：前端为纯静态单页应用，**内置全部数据、无需任何后端服务器即可完整体验**（收藏/报名/发布均存浏览器 localStorage）。详见下方「部署与在线体验」。
+
+## 提交链接
+
+| 项目 | 地址 |
+|------|------|
+| ① GitHub 仓库 | `https://github.com/<你的用户名>/<仓库名>` |
+| ② GitHub Pages 在线作品 | `https://<你的用户名>.github.io/<仓库名>/` |
+
+（部署后请替换为真实地址并确认无痕窗口可访问）
+
 ## 主要解决的问题
 
 校园内各类活动信息（比赛、讲座、招募、学习小组等）来源分散、质量不一，学生（尤其是新生）难以快速获取有效信息并做出判断。本平台整合多来源信息，提供分类浏览、搜索、自主发布等功能，并对存在风险的信息进行标识提示。
@@ -13,13 +24,13 @@
 3. **筛选 + 搜索** - 按类型、来源、「仅看可报名」「只看收藏」筛选，支持关键词搜索，一键清除
 4. **收藏 / 我要参加** - 即时变化 + toast 反馈，可取消，跨页面同步
 5. **学生自主发布** - 表单校验（必填项 + 缺失信息提示），发布后立即进入同一列表、可被筛选到
-6. **本地保存** - 收藏、报名标记存 localStorage，刷新/重开保留；发布内容存后端文件持久化
+6. **本地保存** - 收藏、报名标记、自主发布内容均存 localStorage，刷新/重开/换设备浏览器都保留
 7. **详情展开** - 完整字段、缺失项标注「题目未提供」、关联信息提示
 
 ## 技术栈
 
-- **前端**: Vue 3 + Vite + Vue Router + Pinia + Axios
-- **后端**: FastAPI (Python)
+- **前端（作品主体）**: Vue 3 + Vite + Vue Router(hash) + Pinia；数据内置于 `src/data/activities.ts`，可脱离后端独立运行
+- **后端（可选全栈演示）**: FastAPI (Python)，与前端内置数据保持一致，供本地联调演示
 
 ## 自主设计的创新功能：信息合并 + 变更时间线
 
@@ -33,25 +44,37 @@
 
 **同一活动的初始通知与补充通知分离导致的过期信息风险**。例如训练营已改期改地点，但原通知仍写着旧时间旧地点；创新创业招募的开发方向其实已满。处理方式：后端在返回数据时将 notice 类型条目按 `supplement_to` 合并回原活动（26条 → 24张卡片），覆盖生效字段并保留变更记录；同时 #19 报名已截止但「现场可候补」，专门增加「已截止 · 可候补」状态而非直接归为无效。
 
-## 运行方式
+## 运行与部署
 
-### 后端（需 Python 3.10+）
-
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-### 前端（需 Node 18+）
+### 前端（作品主体，需 Node 18+）
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev        # 本地开发：http://localhost:5173
+npm run build      # 构建静态产物到 frontend/dist，可直接部署到 GitHub Pages
 ```
 
-前端默认运行在 `http://localhost:5173`，后端运行在 `http://localhost:8000`。前端已配置代理，`/api` 请求会自动转发到后端。接口文档：http://127.0.0.1:8000/docs
+前端**不需要后端即可完整体验**。作品采用 hash 路由 + 相对路径 base，可直接部署到 `用户名.github.io/仓库名/` 子路径。
+
+### 部署到 GitHub Pages
+
+1. 将仓库 Push 到 GitHub，保持 Public。
+2. 仓库 Settings → Pages → Build and deployment 的 Source 选择 **GitHub Actions**。
+3. 已内置 `.github/workflows/deploy.yml`，push 到 main 分支后会自动构建 `frontend/dist` 并部署。
+4. 部署完成后访问生成的 `https://用户名.github.io/仓库名/` 链接，建议用无痕窗口验证。
+
+> 若不使用 Actions，也可本地 `npm run build` 后将 `frontend/dist` 内容推送到 `gh-pages` 分支并在 Settings→Pages 选择该分支。
+
+### 后端（可选，需 Python 3.10+）
+
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000   # 接口文档 http://127.0.0.1:8000/docs
+```
+
+后端为全栈能力演示，本地联调时前端 `/api` 代理会自动转发到 `http://127.0.0.1:8000`；在线作品不依赖它。
 
 ## 下一步计划
 

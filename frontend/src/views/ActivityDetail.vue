@@ -37,8 +37,8 @@
         <div class="field">
           <span class="f-label">📍 地点</span>
           <span class="f-value">
-            {{ activity.location || '未提供' }}
-            <span v-if="!activity.location" class="missing">题目未提供</span>
+            <template v-if="activity.location">{{ activity.location }}</template>
+            <span v-else class="missing">{{ activity.is_user_post ? '发布时未填写' : '题目未提供' }}</span>
           </span>
         </div>
         <div class="field" v-if="activity.audience">

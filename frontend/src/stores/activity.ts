@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { activityApi } from '../api'
+import { getMergedActivities, CATEGORY_LABELS } from '../data/activities'
 import { displayStatus, urgencyScore, isActionable, type ActivityLike } from '../utils/time'
 
 export type { ActivityLike }
 
 const LS_FAVORITES = 'campus_favorites_v1'
 const LS_JOINED = 'campus_joined_v1'
+const LS_POSTS = 'campus_user_posts_v1'
 
 function loadLS(key: string): number[] {
   try {
@@ -14,6 +15,30 @@ function loadLS(key: string): number[] {
   } catch {
     return []
   }
+}
+
+function loadUserPosts(): ActivityLike[] {
+  try {
+    return JSON.parse(localStorage.getItem(LS_POSTS) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function maxUserPostId(posts: ActivityLike[]): number {
+  return posts.reduce((m, p) => Math.max(m, p.id), 100)
+}
+
+export interface PublishForm {
+  title: string
+  summary: string
+  category: string
+  time_text?: string
+  deadline?: string
+  location?: string
+  audience?: string
+  threshold?: string
+  contact?: string
 }
 
 export const useActivityStore = defineStore('activity', () => {
@@ -51,14 +76,60 @@ export const useActivityStore = defineStore('activity', () => {
     loading.value = true
     error.value = null
     try {
-      const res = await activityApi.getList()
-      activities.value = res.data.data
-      categoryLabels.value = res.data.category_labels || {}
+      // 内置数据 + 本地发布内容，无需后端即可运行（适配 GitHub Pages 静态部署）
+      const merged = getMergedActivities()
+      activities.value = merged.concat(loadUserPosts())
+      categoryLabels.value = CATEGORY_LABELS
     } catch (e: any) {
-      error.value = e.message || '获取活动列表失败，请确认后端服务已启动'
+      error.value = e.message || '加载活动数据失败'
     } finally {
       loading.value = false
     }
+  }
+
+  /** 学生自主发布：写入 localStorage，刷新/重开后仍在，并立即进入列表 */
+  function addPost(form: PublishForm): ActivityLike {
+    const posts = loadUserPosts()
+    const missing: string[] = []
+    if (!form.time_text?.trim()) missing.push('活动时间')
+    if (!form.location?.trim()) missing.push('活动地点')
+    if (!form.contact?.trim()) missing.push('联系方式')
+    if (!form.threshold?.trim()) missing.push('参与条件')
+    const id = maxUserPostId(posts) + 1
+    const post: ActivityLike = {
+      id,
+      title: form.title.trim(),
+      summary: form.summary.trim(),
+      category: form.category,
+      source: 'student',
+      time_text: form.time_text?.trim() || '时间待确认',
+      event_start: null,
+      deadline: form.deadline || null,
+      deadline_text: form.deadline || '未注明',
+      location: form.location?.trim() || null,
+      audience: form.audience?.trim() || null,
+      threshold: form.threshold?.trim() || null,
+      contact: form.contact?.trim() || null,
+      status: 'open',
+      status_note: null,
+      missing_fields: missing,
+      risk_flag: false,
+      risk_reason: null,
+      is_user_post: true,
+      timeline: [{ time: '发布于考核当日', text: form.summary.trim(), is_update: false }],
+      supplements: [],
+      related: [],
+    }
+    posts.push(post)
+    localStorage.setItem(LS_POSTS, JSON.stringify(posts))
+    activities.value = getMergedActivities().concat(posts)
+    return post
+  }
+
+  function removeUserPost(id: number) {
+    const posts = loadUserPosts().filter((p) => p.id !== id)
+    localStorage.setItem(LS_POSTS, JSON.stringify(posts))
+    activities.value = getMergedActivities().concat(posts)
   }
 
   function getById(id: number): ActivityLike | undefined {
@@ -132,6 +203,8 @@ export const useActivityStore = defineStore('activity', () => {
     toggleFavorite,
     toggleJoin,
     fetchActivities,
+    addPost,
+    removeUserPost,
     getById,
     normalActivities,
     riskActivities,

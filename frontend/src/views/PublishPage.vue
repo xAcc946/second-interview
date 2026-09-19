@@ -87,7 +87,6 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { publishApi } from '../api'
 import { useActivityStore } from '../stores/activity'
 import { useToastStore } from '../stores/toast'
 
@@ -137,17 +136,11 @@ async function trySubmit() {
   }
   submitting.value = true
   try {
-    const deadlineISO = form.deadline ? form.deadline : undefined
-    await publishApi.create({
-      ...form,
-      deadline: deadlineISO,
-      time_text: form.time_text || undefined,
-    })
-    await store.fetchActivities() // 重新拉取，新内容立即进入列表
+    store.addPost({ ...form }) // 写入 localStorage，新内容立即进入列表
     toast.show('发布成功，已出现在活动列表中')
     router.push('/')
   } catch (e: any) {
-    toast.show(e.message || '发布失败，请确认后端服务已启动', 'warn')
+    toast.show(e.message || '发布失败，请重试', 'warn')
   } finally {
     submitting.value = false
   }
