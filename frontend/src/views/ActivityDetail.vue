@@ -89,7 +89,7 @@
           :class="{ done: isJoined }"
           @click="onJoin"
         >
-          {{ isJoined ? '✓ 已标记参加（点击取消）' : '我要参加' }}
+          {{ isJoined ? '✓ 已报名（查看）' : '我要参加' }}
         </button>
       </div>
     </div>
@@ -103,12 +103,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useActivityStore } from '../stores/activity'
 import { useToastStore } from '../stores/toast'
 import { displayStatus, deadlineCountdown, SOURCE_LABELS } from '../utils/time'
 
 const route = useRoute()
+const router = useRouter()
 const store = useActivityStore()
 const toast = useToastStore()
 
@@ -141,8 +142,8 @@ function onFavorite() {
 }
 
 function onJoin() {
-  const added = store.toggleJoin(activity.value!.id)
-  toast.show(added ? '已标记「我要参加」' : '已取消报名标记', added ? 'success' : 'info')
+  // 跳转到报名表单页；已报名则进入报名成功页
+  router.push(`/signup/${activity.value!.id}`)
 }
 </script>
 

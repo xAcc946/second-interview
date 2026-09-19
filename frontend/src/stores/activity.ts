@@ -8,12 +8,29 @@ export type { ActivityLike }
 const LS_FAVORITES = 'campus_favorites_v1'
 const LS_JOINED = 'campus_joined_v1'
 const LS_POSTS = 'campus_user_posts_v1'
+const LS_SIGNUPS = 'campus_signups_v1'
 
 function loadLS(key: string): number[] {
   try {
     return JSON.parse(localStorage.getItem(key) || '[]')
   } catch {
     return []
+  }
+}
+
+/** 报名记录：活动 id -> 学生填写的个人信息 */
+export interface SignupInfo {
+  name: string
+  class_name: string
+  student_id: string
+  signed_at: string
+}
+
+function loadSignups(): Record<string, SignupInfo> {
+  try {
+    return JSON.parse(localStorage.getItem(LS_SIGNUPS) || '{}')
+  } catch {
+    return {}
   }
 }
 
@@ -57,6 +74,14 @@ export const useActivityStore = defineStore('activity', () => {
   // 收藏 / 报名（localStorage 持久化，刷新重开仍在）
   const favorites = ref<number[]>(loadLS(LS_FAVORITES))
   const joined = ref<number[]>(loadLS(LS_JOINED))
+  const signups = ref<Record<string, SignupInfo>>(loadSignups())
+
+  // 兼容旧数据：早期“打勾标记”式报名没有个人信息，统一清理，需重新走报名表单
+  const cleanedJoined = joined.value.filter((id) => Boolean(signups.value[String(id)]))
+  if (cleanedJoined.length !== joined.value.length) {
+    joined.value = cleanedJoined
+    localStorage.setItem(LS_JOINED, JSON.stringify(cleanedJoined))
+  }
 
   function toggleFavorite(id: number): boolean {
     const idx = favorites.value.indexOf(id)
@@ -65,11 +90,34 @@ export const useActivityStore = defineStore('activity', () => {
     return idx < 0
   }
 
-  function toggleJoin(id: number): boolean {
+  /** 正式报名：保存个人信息并标记已参加 */
+  function signup(id: number, info: { name: string; class_name: string; student_id: string }): SignupInfo {
+    const record: SignupInfo = {
+      ...info,
+      signed_at: new Date().toLocaleString('zh-CN', { hour12: false }),
+    }
+    signups.value[String(id)] = record
+    localStorage.setItem(LS_SIGNUPS, JSON.stringify(signups.value))
+    if (!joined.value.includes(id)) {
+      joined.value.push(id)
+      localStorage.setItem(LS_JOINED, JSON.stringify(joined.value))
+    }
+    return record
+  }
+
+  function getSignup(id: number): SignupInfo | null {
+    return signups.value[String(id)] || null
+  }
+
+  /** 取消报名：清除个人信息与参加标记 */
+  function cancelSignup(id: number) {
+    delete signups.value[String(id)]
+    localStorage.setItem(LS_SIGNUPS, JSON.stringify(signups.value))
     const idx = joined.value.indexOf(id)
-    idx >= 0 ? joined.value.splice(idx, 1) : joined.value.push(id)
-    localStorage.setItem(LS_JOINED, JSON.stringify(joined.value))
-    return idx < 0
+    if (idx >= 0) {
+      joined.value.splice(idx, 1)
+      localStorage.setItem(LS_JOINED, JSON.stringify(joined.value))
+    }
   }
 
   async function fetchActivities() {
@@ -200,8 +248,11 @@ export const useActivityStore = defineStore('activity', () => {
     onlyFavorites,
     favorites,
     joined,
+    signups,
     toggleFavorite,
-    toggleJoin,
+    signup,
+    getSignup,
+    cancelSignup,
     fetchActivities,
     addPost,
     removeUserPost,

@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useActivityStore } from '../stores/activity'
 import { useToastStore } from '../stores/toast'
 import { displayStatus, deadlineCountdown, SOURCE_LABELS, type ActivityLike } from '../utils/time'
@@ -72,6 +73,7 @@ const props = defineProps<{ activity: ActivityLike }>()
 
 const store = useActivityStore()
 const toast = useToastStore()
+const router = useRouter()
 
 const status = computed(() => displayStatus(props.activity))
 const countdown = computed(() => deadlineCountdown(props.activity.deadline))
@@ -89,11 +91,8 @@ function onFavorite() {
 }
 
 function onJoin() {
-  const added = store.toggleJoin(props.activity.id)
-  toast.show(
-    added ? '已标记「我要参加」，可在收藏页快速找到' : '已取消报名标记',
-    added ? 'success' : 'info'
-  )
+  // 跳转到报名表单页；已报名则进入报名成功页
+  router.push(`/signup/${props.activity.id}`)
 }
 
 function onNotJoinable() {

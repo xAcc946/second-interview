@@ -75,7 +75,6 @@
             <input type="checkbox" v-model="store.onlyFavorites" />
             <span>⭐ 只看收藏（{{ store.favorites.length }}）</span>
           </label>
-          <button v-if="hasFilter" class="reset-btn" @click="store.resetFilters()">清除筛选</button>
         </div>
       </div>
     </div>
@@ -147,15 +146,6 @@ const sourceOptions = [
   { label: '院级', value: 'college' },
   { label: '学生自发', value: 'student' },
 ]
-
-const hasFilter = computed(
-  () =>
-    store.keyword !== '' ||
-    store.activeCategory !== 'all' ||
-    store.activeSource !== 'all' ||
-    store.onlyActionable ||
-    store.onlyFavorites
-)
 </script>
 
 <style scoped>
@@ -328,16 +318,6 @@ const hasFilter = computed(
 }
 
 .switch input { accent-color: #2563eb; }
-
-.reset-btn {
-  padding: 4px 12px;
-  border: none;
-  background: none;
-  color: #dc2626;
-  font-size: 0.84rem;
-  cursor: pointer;
-  text-decoration: underline;
-}
 
 .result-count {
   color: #94a3b8;
