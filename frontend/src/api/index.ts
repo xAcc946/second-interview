@@ -25,12 +25,14 @@ export const activityApi = {
 export const publishApi = {
   create(data: {
     title: string
-    content: string
+    summary: string
     category: string
+    time_text?: string
     deadline?: string
     location?: string
+    audience?: string
+    threshold?: string
     contact?: string
-    max_participants?: number
   }) {
     return api.post('/publish/', data)
   },
